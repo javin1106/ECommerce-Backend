@@ -19,6 +19,12 @@ export const createProduct = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Required fields are missing");
   }
 
+  const existingProduct = await Product.findOne({ title, brand });
+
+  if (existingProduct) {
+    throw new ApiError(409, "Product with this title and brand already exists");
+  }
+
   const product = await Product.create({
     title,
     description,
