@@ -78,3 +78,114 @@ export const addToCart = asyncHandler(async (req, res) => {
     .status(200)
     .json(new ApiResponse(200, cart, "Product added to cart successfully"));
 });
+
+export const removeFromCart = asyncHandler(async (req, res) => {
+  const { productId } = req.body;
+  const userId = req.user._id;
+
+  if (!productId) {
+    throw new ApiError(400, "Product ID is required");
+  }
+
+  const updatedCart = await Cart.findOneAndUpdate(
+    { user: userId, "items.product": productId },
+    { $pull: { items: { product: productId } } },
+    { new: true }
+  );
+
+  if (!updatedCart) {
+    throw new ApiError(404, "Product not found in cart or cart does not exist");
+  }
+
+  updatedCart.cartTotal = (updatedCart.items || []).reduce(
+    (sum, item) => sum + item.total,
+    0
+  );
+  await updatedCart.save();
+
+  await updatedCart.populate("items.product");
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        updatedCart,
+        "Product removed from cart successfully"
+      )
+    );
+});
+
+export const updateQuantity = asyncHandler(async (req, res) => {
+  const userId = req.user._id;
+  const { productId, quantity } = req.body;
+
+  if (!productId) {
+    throw new ApiError(400, "Product ID is required");
+  }
+
+  if (quantity == null) {
+    throw new ApiError(400, "Quantity is required");
+  }
+
+  if (quantity < 1) {
+    throw new ApiError(400, "Quantity must be at least 1");
+  }
+
+  const cart = await Cart.findOne({ user: userId });
+
+  if (!cart) {
+    throw new ApiError(404, "Cart not found");
+  }
+
+  const item = cart.items.find((it) => it.product.toString() === productId);
+
+  if (!item) {
+    throw new ApiError(404, "Product not found in cart");
+  }
+
+  const product = await Product.findById(productId);
+
+  if (!product) {
+    throw new ApiError(404, "Product not found");
+  }
+
+  if (quantity > product.stock) {
+    throw new ApiError(400, "Requested quantity exceeds available stock");
+  }
+
+  item.quantity = quantity;
+  item.total = item.quantity * item.priceAtTime;
+
+  cart.cartTotal = cart.items.reduce((sum, it) => sum + it.total, 0);
+  cart.markModified("items");
+  await cart.save();
+  await cart.populate("items.product");
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, cart, "Cart quantity updated"));
+});
+
+export const getCart = asyncHandler(async (req, res) => {
+  const userId = req.user._id;
+  const cart = await Cart.findOne({ user: userId });
+  cart.populate("items.products");
+
+  if (!cart) {
+    return res.status(200).json(
+      new ApiResponse(
+        200,
+        {
+          items: [],
+          cartTotal: 0,
+        },
+        "Cart is empty"
+      )
+    );
+  }
+
+  return res
+    .status(201)
+    .json(new ApiResponse(201, cart, "Cart fetched successfully"));
+});
