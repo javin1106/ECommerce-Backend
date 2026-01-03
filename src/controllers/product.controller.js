@@ -15,25 +15,33 @@ export const createProduct = asyncHandler(async (req, res) => {
     stock,
   } = req.body;
 
-  if (!title || !description || !price || !category || !thumbnail || !brand) {
+  if (
+    !title?.trim() ||
+    !description?.trim() ||
+    price === undefined ||
+    price === null ||
+    !category?.trim() ||
+    !brand?.trim() ||
+    !thumbnail?.trim()
+  ) {
     throw new ApiError(400, "Required fields are missing");
   }
 
-  const existingProduct = await Product.findOne({ title, brand });
+  const existingProduct = await Product.findOne({ title: title.trim(), brand: brand.trim() });
 
   if (existingProduct) {
     throw new ApiError(409, "Product with this title and brand already exists");
   }
 
   const product = await Product.create({
-    title,
-    description,
+    title: title.trim(),
+    description: description.trim(),
     price,
-    category,
-    brand,
-    thumbnail,
-    images,
-    stock,
+    category: category.trim(),
+    brand: brand.trim(),
+    thumbnail: thumbnail.trim(),
+    images: images || [],
+    stock: stock || 0,
   });
 
   return res

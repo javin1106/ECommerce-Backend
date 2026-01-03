@@ -13,7 +13,7 @@ const orderItemSchema = new mongoose.Schema(
     thumbnail: {
       type: String,
     },
-    priceAtPurchase: {
+    priceAtTime: {
       type: Number,
       required: true,
     },

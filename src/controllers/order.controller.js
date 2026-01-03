@@ -17,27 +17,31 @@ export const createOrder = asyncHandler(async (req, res) => {
   }
 
   let finalTotal = 0;
+  const orderItems = [];
+
   cart.items.forEach((item) => {
     const product = item.product;
 
     if (!product || product.stock === 0) {
       throw new ApiError(400, "Cannot place order: product unavailable");
     }
-  });
 
-  const itemTotal = product.price * item.quantity;
-  finalTotal += itemTotal;
+    const itemTotal = product.price * item.quantity;
+    finalTotal += itemTotal;
+
+    orderItems.push({
+      product: product._id,
+      title: product.title,
+      thumbnail: product.thumbnail,
+      priceAtTime: product.price,
+      quantity: item.quantity,
+      total: itemTotal,
+    });
+  });
 
   const order = await Order.create({
     user: userId,
-    items: {
-      product: item.product._id,
-      title: item.product.title,
-      thumbnail: item.product.thumbnail,
-      priceAtTime: item.product.price,
-      quantity: item.quantity,
-      total: item.product.price * item.quantity,
-    },
+    items: orderItems,
     totalAmount: finalTotal,
     status: "PENDING_PAYMENT",
   });

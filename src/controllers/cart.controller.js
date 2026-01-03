@@ -170,7 +170,7 @@ export const updateQuantity = asyncHandler(async (req, res) => {
 export const getCart = asyncHandler(async (req, res) => {
   const userId = req.user._id;
   const cart = await Cart.findOne({ user: userId });
-  cart.populate("items.products");
+  cart.populate("items.product");
 
   if (!cart) {
     return res.status(200).json(
