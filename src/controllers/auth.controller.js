@@ -3,6 +3,8 @@ import jwt from "jsonwebtoken";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
+import { configDotenv } from "dotenv";
+configDotenv();
 
 const cookieOptions = {
   httpOnly: true,
@@ -21,7 +23,7 @@ const generateAccessandRefreshTokens = async (userId) => {
     const refreshToken = user.generateRefreshToken();
 
     user.refreshToken = refreshToken;
-    await user.save({ validateBeforeSave: false });
+    await user.save({ validateModifiedOnly: true });
 
     return { accessToken, refreshToken };
   } catch (error) {
@@ -52,6 +54,7 @@ export const registerUser = asyncHandler(async (req, res) => {
   return res
     .status(201)
     .cookie("refreshToken", refreshToken, cookieOptions)
+    .cookie("accessToken", accessToken, cookieOptions)
     .json(
       new ApiResponse(
         201,
@@ -86,11 +89,12 @@ export const loginUser = asyncHandler(async (req, res) => {
   );
 
   return res
-    .status(200)
+    .status(201)
     .cookie("refreshToken", refreshToken, cookieOptions)
+    .cookie("accessToken", accessToken, cookieOptions)
     .json(
       new ApiResponse(
-        200,
+        201,
         {
           user: {
             id: user._id,
@@ -148,7 +152,7 @@ export const refreshAccessToken = asyncHandler(async (req, res) => {
 });
 
 export const getCurrentUser = asyncHandler(async (req, res) => {
-  const user = await User.findById(req.user?.id).select(
+  const user = await User.findById(req.user?._id).select(
     "-password -refreshToken"
   );
 
