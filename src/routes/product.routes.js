@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { authorizeRole } from "../middleware/auth.roles.js";
 
 import {
   createProduct,
@@ -10,7 +11,7 @@ import { verifyJWT } from "../middleware/auth.middleware.js";
 
 const productRoutes = Router();
 
-productRoutes.post("/", verifyJWT, createProduct);
+productRoutes.post("/", verifyJWT, authorizeRole("admin"), createProduct);
 productRoutes.get("/:id", verifyJWT, getProductById);
 productRoutes.get("/", verifyJWT, getAllProducts);
 
