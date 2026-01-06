@@ -16,6 +16,10 @@ export const createOrder = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Cart is empty, cannot place order");
   }
 
+  if (cart.isLocked) {
+    throw new ApiError(400, "Cart is locked during checkout");
+  }
+
   let finalTotal = 0;
   const orderItems = [];
 
@@ -45,6 +49,9 @@ export const createOrder = asyncHandler(async (req, res) => {
     totalAmount: finalTotal,
     status: "PENDING_PAYMENT",
   });
+
+  cart.isLocked = true;
+  await cart.save();
 
   return res.status(201).json(
     new ApiResponse(

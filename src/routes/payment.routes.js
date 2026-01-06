@@ -1,9 +1,11 @@
-import { makePayment } from "../controllers/payment.controller";
+import { paymentSuccess } from "../controllers/payment.controller.js";
+import { paymentFailed } from "../controllers/payment.controller.js";
 import { Router } from "express";
 import { verifyJWT } from "../middleware/auth.middleware.js";
 
 const paymentRouter = Router();
 
-paymentRouter.post("/payment-success", verifyJWT, makePayment);
+paymentRouter.post("/success", verifyJWT, paymentSuccess);
+paymentRouter.post("/failed", paymentFailed);
 
 export default paymentRouter;

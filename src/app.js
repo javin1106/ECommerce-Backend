@@ -33,7 +33,7 @@ app.use("/api/products", productRoutes);
 app.use("/api/cart", cartRouter);
 app.use("/api/checkout", checkoutRouter);
 app.use("/api/orders", orderRoutes);
-app.use("/api/payments", paymentRouter);
+app.use("/api/payment", paymentRouter);
 
 // Health Check Route
 app.get("/", (req, res) => {

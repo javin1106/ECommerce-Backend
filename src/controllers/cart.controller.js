@@ -28,6 +28,10 @@ export const addToCart = asyncHandler(async (req, res) => {
 
   let cart = await Cart.findOne({ user: userId }); // find or create cart for user
 
+  if (cart?.isLocked) {
+    throw new ApiError(400, "Cart is locked during checkout");
+  }
+
   if (!cart) {
     cart = await Cart.create({
       user: userId,
@@ -87,30 +91,35 @@ export const removeFromCart = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Product ID is required");
   }
 
-  const updatedCart = await Cart.findOneAndUpdate(
-    { user: userId, "items.product": productId },
-    { $pull: { items: { product: productId } } },
-    { new: true }
-  );
+  const cart = await Cart.findOne({ user: userId });
 
-  if (!updatedCart) {
-    throw new ApiError(404, "Product not found in cart or cart does not exist");
+  if (!cart) {
+    throw new ApiError(404, "Cart does not exist");
   }
 
-  updatedCart.cartTotal = (updatedCart.items || []).reduce(
-    (sum, item) => sum + item.total,
-    0
-  );
-  await updatedCart.save();
+  if (cart.isLocked) {
+    throw new ApiError(400, "Cart is locked during checkout");
+  }
 
-  await updatedCart.populate("items.product");
+  const initialLength = cart.items.length;
+  cart.items = cart.items.filter((item) => item.product.toString() !== productId);
+
+  if (cart.items.length === initialLength) {
+    throw new ApiError(404, "Product not found in cart");
+  }
+
+  cart.cartTotal = (cart.items || []).reduce((sum, item) => sum + item.total, 0);
+  cart.markModified("items");
+  await cart.save();
+
+  await cart.populate("items.product");
 
   return res
     .status(200)
     .json(
       new ApiResponse(
         200,
-        updatedCart,
+        cart,
         "Product removed from cart successfully"
       )
     );
@@ -136,6 +145,10 @@ export const updateQuantity = asyncHandler(async (req, res) => {
 
   if (!cart) {
     throw new ApiError(404, "Cart not found");
+  }
+
+  if (cart.isLocked) {
+    throw new ApiError(400, "Cart is locked during checkout");
   }
 
   const item = cart.items.find((it) => it.product.toString() === productId);

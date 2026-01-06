@@ -10,6 +10,10 @@ export const checkoutReview = asyncHandler(async (req, res) => {
     "title price stock thumbnail"
   );
 
+  if (cart?.isLocked) {
+    throw new ApiError(400, "Cart is locked during checkout");
+  }
+
   if (!cart || !cart.items || cart.items.length === 0) {
     throw new ApiError(400, "Cart is empty");
   }

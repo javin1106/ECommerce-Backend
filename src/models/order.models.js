@@ -50,8 +50,13 @@ const orderSchema = new mongoose.Schema(
 
     status: {
       type: String,
-      enum: ["PENDING_PAYMENT", "CONFIRMED", "CANCELLED"],
+      enum: ["PENDING_PAYMENT", "CONFIRMED", "CANCELLED", "FAILED"],
       default: "PENDING_PAYMENT",
+    },
+
+    expiresAt: {
+      type: Date,
+      default: new Date.now() + 10 * 60 * 1000,
     },
   },
   { timestamps: true }

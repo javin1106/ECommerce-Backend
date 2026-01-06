@@ -39,6 +39,12 @@ const cartSchema = new mongoose.Schema(
     },
 
     items: [cartItemSchema],
+
+    isLocked: {
+      type: Boolean,
+      default: false,
+      required: true,
+    },
   },
   { timestamps: true }
 );

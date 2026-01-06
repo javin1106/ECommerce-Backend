@@ -5,7 +5,7 @@ import { Order } from "../models/order.model.js";
 import Product from "../models/product.models.js";
 import { Cart } from "../models/cart.models.js";
 
-export const makePayment = asyncHandler(async (req, res) => {
+export const paymentSuccess = asyncHandler(async (req, res) => {
   const userId = req.user?._id;
   const { orderId } = req.body;
 
@@ -64,4 +64,36 @@ export const makePayment = asyncHandler(async (req, res) => {
     .json(
       new ApiResponse(200, order, "Payment successful and order confirmed")
     );
+});
+
+export const paymentFailed = asyncHandler(async (req, res) => {
+  const userId = req.user?._id;
+  const { orderId } = req.body;
+
+  if (!orderId) {
+    throw new ApiError(400, "Order ID is required");
+  }
+
+  if (!userId) {
+    throw new ApiError(400, "User does not exist");
+  }
+
+  const order = await Order.findById(orderId);
+
+  if (!order) {
+    throw new ApiError(404, "Order not found");
+  }
+
+  if (order.user.toString() !== userId.toString()) {
+    throw new ApiError(403, "You are not allowed to access this order");
+  }
+
+  if (order.status !== "PENDING_PAYMENT") {
+    throw new ApiError(400, "Order is not in payable state");
+  }
+
+  order.status = "FAILED";
+  await order.save();
+
+  return res.status(200).json(new ApiResponse(200, order, "Payment failed!!"));
 });
