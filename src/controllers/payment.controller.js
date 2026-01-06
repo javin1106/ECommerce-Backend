@@ -23,6 +23,10 @@ export const paymentSuccess = asyncHandler(async (req, res) => {
     throw new ApiError(403, "You cannot access this order");
   }
 
+  if (order.expiresAt < Date.now()) {
+    throw new ApiError(400, "Order expired, please create a new order");
+  }
+
   if (order.status !== "PENDING_PAYMENT") {
     throw new ApiError(400, "Order is not in payable state");
   }
@@ -88,12 +92,18 @@ export const paymentFailed = asyncHandler(async (req, res) => {
     throw new ApiError(403, "You are not allowed to access this order");
   }
 
+  if (order.expiresAt < Date.now()) {
+    throw new ApiError(400, "Order expired, please create a new order");
+  }
+
   if (order.status !== "PENDING_PAYMENT") {
     throw new ApiError(400, "Order is not in payable state");
   }
 
   order.status = "FAILED";
   await order.save();
+
+  await Cart.findOneAndUpdate({ user: userId }, { $set: { isLocked: false } });
 
   return res.status(200).json(new ApiResponse(200, order, "Payment failed!!"));
 });
