@@ -1,7 +1,7 @@
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
-import { Order } from "../models/order.model.js";
+import { Order } from "../models/order.models.js";
 import Product from "../models/product.models.js";
 import { Cart } from "../models/cart.models.js";
 
@@ -31,26 +31,6 @@ export const paymentSuccess = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Order is not in payable state");
   }
 
-  for (let item of order.items) {
-    const product = await Product.findById(item.product);
-
-    if (!product) {
-      throw new ApiError(400, `${item.title} doesn't exist anymore`);
-    }
-
-    if (product.stock < item.quantity) {
-      throw new ApiError(
-        400,
-        `Not enough stock available for ${product.title}`
-      );
-    }
-  }
-
-  product.stock -= item.quantity;
-  await product.save();
-
-  order.status = "CONFIRMED";
-
   await order.save();
 
   await Cart.findOneAndUpdate(
@@ -59,6 +39,7 @@ export const paymentSuccess = asyncHandler(async (req, res) => {
       $set: {
         items: [],
         cartTotal: 0,
+        isLocked: false,
       },
     }
   );

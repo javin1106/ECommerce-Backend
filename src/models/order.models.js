@@ -56,7 +56,7 @@ const orderSchema = new mongoose.Schema(
 
     expiresAt: {
       type: Date,
-      default: new Date.now() + 10 * 60 * 1000,
+      default: () => Date.now() + 10 * 60 * 1000,
     },
   },
   { timestamps: true }

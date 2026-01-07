@@ -6,6 +6,6 @@ import { verifyJWT } from "../middleware/auth.middleware.js";
 const paymentRouter = Router();
 
 paymentRouter.post("/success", verifyJWT, paymentSuccess);
-paymentRouter.post("/failed", paymentFailed);
+paymentRouter.post("/failed", verifyJWT, paymentFailed);
 
 export default paymentRouter;
